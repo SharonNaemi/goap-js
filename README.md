@@ -5,7 +5,7 @@ A simple Goal-Oriented Action Planning (GOAP) implementation in JavaScript. This
 
 ## What is GOAP?
 
-GOAP stands for **Goal-Oriented Action Planning**, a decision-making architecture often used in AI systems, especially in games. It allows agents to plan sequences of actions to reach a specific goal based on the current state of the world.
+GOAP stands for **Goal-Oriented Action Planning**, a decision-making architecture often used in AI systems. It allows agents to plan sequences of actions to reach a specific goal based on the current state of the world.
 
 
 ## Project Structure
