@@ -1,58 +1,26 @@
-import { merge } from "lodash/fp/object";
-import PriorityQueue from "fastpriorityqueue";
-
-class Node {
-  constructor(parent, cost, state, action) {
-    this.cost = cost;
-    this.parent = parent;
-    this.state = merge({}, state);
-    this.key = action ? action.key : null;
-    this.action = action;
-  }
-}
-
-const mapActions = actions => {
-  actions = merge({}, actions)
-  return Object.keys(actions).map(key => {
-    return { ...actions[key], key };
-  });
-};
-
-const buildGraph = (parent, leaves, actions, goal) => {
-  actions.forEach(action => {
-    if (action.condition(parent.state)) {
-      let nextState = action.effect(merge({}, parent.state));
-      const cost = parent.cost + action.cost(nextState);
-      const node = new Node(parent, cost, nextState, action);
-      if (goal.validate(parent.state, nextState)) {
-        leaves.add(node);
-      } else {
-        const subset = actions.filter(a => a.key !== action.key);
-        return buildGraph(node, leaves, subset, goal);
+function plan(state, actions, goal) {
+    const stateClone = JSON.parse(JSON.stringify(state));
+    const usable = Object.entries(actions).filter(([_, a]) => a.condition(stateClone));
+  
+    for (const [name, action] of usable) {
+      const newState = action.effect(JSON.parse(JSON.stringify(stateClone)));
+      if (goal.validate(stateClone, newState)) return [name];
+  
+      const nextUsable = Object.entries(actions).filter(([_, a]) => a.condition(newState));
+      for (const [name2, action2] of nextUsable) {
+        const newerState = action2.effect(JSON.parse(JSON.stringify(newState)));
+        if (goal.validate(stateClone, newerState)) return [name, name2];
+  
+        const thirdUsable = Object.entries(actions).filter(([_, a]) => a.condition(newerState));
+        for (const [name3, action3] of thirdUsable) {
+          const finalState = action3.effect(JSON.parse(JSON.stringify(newerState)));
+          if (goal.validate(stateClone, finalState)) return [name, name2, name3];
+        }
       }
     }
-  });
-  return leaves;
-};
-
-const getPlanFromLeaf = (node, goal) => {
-  const plan = [];
-  const cost = node.cost;
-  while (node) {
-    if (node.action) plan.unshift(node.action);
-    node = node.parent;
+  
+    return [];
   }
-  return {
-    cost,
-    goal,
-    actions: plan.map(n => n.key)
-  };
-};
-
-export const createPlan = (state, actions, goal) => {
-  const root = new Node(null, 0, state, null);
-  const leaves = new PriorityQueue((a, b) => a.cost < b.cost);
-  buildGraph(root, leaves, mapActions(actions), goal);
-  if (!leaves.isEmpty()) return getPlanFromLeaf(leaves.poll(), goal);
-  return null;
-};
+  
+  module.exports = { plan };
+  
